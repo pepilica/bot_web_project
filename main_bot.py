@@ -206,7 +206,7 @@ class Bot:
     def register(self, update, context):
         """Регистрация"""
         update.message.reply_text('Для того, чтобы зарегистрироваться, перейдите по ссылке.\n'
-                                  'http://yandexlyceum-shop.heroku.com/register\n'
+                                  'yandexlyceum-shop.heroku.com/register\n'
                                   'Чтобы вернуться в меню авторизации, воспользуйтесь кнопкой /start',
                                   reply_markup=self.start_keyboard())
 
