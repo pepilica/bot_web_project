@@ -253,28 +253,34 @@ class Bot:
 
     def send_photo(self, update, context, status=None, i=None):
         """Процедура отправки фото"""
-        if status == 'Account':
-            if self.user["photo_id"]:
-                response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/{self.user["photo_id"]}').content
+        try:
+            if status == 'Account':
+                if self.user["photo_id"]:
+                    response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/{self.user["photo_id"]}').content
+                    file = io.BytesIO(response)
+                    file.seek(0)
+                else:
+                    response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/1').content
+                    file = io.BytesIO(response)
+                    file.seek(0)
+                context.bot.send_photo(
+                    chat_id=update.message.chat_id,
+                    photo=file
+                )
+            elif status == 'Product':
+                if ',' in i:
+                    photo_first = i.split(',')[0]
+                else:
+                    photo_first = i
+                response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/{photo_first}').content
                 file = io.BytesIO(response)
                 file.seek(0)
-            else:
-                response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/1').content
-                file = io.BytesIO(response)
-                file.seek(0)
-            context.bot.send_photo(
-                chat_id=update.message.chat_id,
-                photo=file
-            )
-        elif status == 'Product':
-            photo_first = i.split(',')[0]
-            response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/{photo_first}').content
-            file = io.BytesIO(response)
-            file.seek(0)
-            context.bot.send_photo(
-                chat_id=update.message.chat_id,
-                photo=file
-            )
+                context.bot.send_photo(
+                    chat_id=update.message.chat_id,
+                    photo=file
+                )
+        except Exception as e:
+            print(e)
 
     def account(self, update, context):
         """Экран с данными о пользователе"""
