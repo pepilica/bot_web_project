@@ -2,13 +2,12 @@ import io
 import os
 from PIL import Image
 
-from data import db_session
 from data.categories import Category
 import requests
 
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from config import TOKEN
+from config import TOKEN, CATEGORIES
 from data.photos import Photo
 from data.users import User
 
@@ -22,20 +21,17 @@ class Bot:
 
         self.buy = False
 
-        self.session = db_session.create_session()
         self.all_users = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/users').json()['user']
         self.categories = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/products').json()['product']
         self.categories_index = {}
-        for i in self.session.query(Category).all():
-            self.categories_index[i.id] = i.category
+        for i in range(len(CATEGORIES)):
+            self.categories_index[i + 1] = CATEGORIES[i]
         self.products = {}
         for i in self.categories:
             if not self.categories_index[i['category']] in self.products.keys():
                 self.products[self.categories_index[i['category']]] = [i]
             elif self.categories_index[i['category']] in self.products.keys():
                 self.products[self.categories_index[i['category']]].append(i)
-        for photo in self.session.query(Photo):
-            Image.open(io.BufferedReader(io.BytesIO(photo.photo))).convert('RGB').save(f'photos/{photo.id}.jpg')
 
         self.user = None
         self.category = None
@@ -313,17 +309,25 @@ class Bot:
             except Exception:
                 return self.errors(update, context, status='Wrong input')
             if self.checker(email, status='Mail'):
-                for user in self.session.query(User).all():
-                    if user.email == email and user.check_password(password):
-                        self.login_status = False
-                        self.authorization_status = True
+                response = requests.put('http://yandexlyceum-shop.herokuapp.com/api/users', json={
+                    'email': email,
+                    'password': password
+                }).json()
+                if 'success' in response.keys():
+                    self.login_status = False
+                    self.authorization_status = True
+                    user = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/users/{response["user_id"]}').json()
+                    if 'success' in response.keys():
                         for i in self.all_users:
-                            if user.email == i["email"]:
+                            if user["user"]["email"] == i["email"]:
                                 self.user = i
                         return self.success_authorization(update, context)
-                    elif user.email == email and not user.check_password(password):
+                    return self.errors(update, context, status='User not found')
+                else:
+                    if response['error'] == 'Пользователя с таким email не существует':
+                        return self.errors(update, context, status='User not found')
+                    elif response['error'] == 'Неверный пароль':
                         return self.errors(update, context, status='Password')
-                return self.errors(update, context, status='User not found')
             else:
                 return self.errors(update, context, status='Mail')
 
@@ -384,6 +388,5 @@ class Bot:
 
 if __name__ == '__main__':
     #  запуск нужных для работы утилит
-    db_session.global_init(os.path.join('db', 'shop.sqlite'))
     port = int(os.environ.get("PORT", 5000))
     Bot().main()
