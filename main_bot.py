@@ -271,7 +271,7 @@ class Bot:
                 photo=file
             )
         elif status == 'Product':
-            photo_first = i[0]
+            photo_first = i.split(',')[0]
             response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/{photo_first}').content
             file = io.BytesIO(response)
             file.seek(0)
