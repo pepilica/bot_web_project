@@ -259,24 +259,22 @@ class Bot:
         """Процедура отправки фото"""
         if status == 'Account':
             if self.user["photo_id"]:
-                try:
-                    file = open(f'photos/{self.user["photo_id"] - 1}.jpg', 'rb')
-                except Exception:
-                    file = open(f'photos/{self.user["photo_id"] - 1}.png', 'rb')
+                response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/{self.user["photo_id"]}').content
+                file = io.BytesIO(response)
+                file.seek(0)
             else:
-                try:
-                    file = open(f'photos/0.jpg', 'rb')
-                except Exception:
-                    file = open(f'photos/0.png', 'rb')
+                response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/1').content
+                file = io.BytesIO(response)
+                file.seek(0)
             context.bot.send_photo(
                 chat_id=update.message.chat_id,
                 photo=file
             )
         elif status == 'Product':
-            try:
-                file = open(f'photos/{int(i) - 1}.jpg', 'rb')
-            except Exception:
-                file = open(f'photos/{int(i) - 1}.png', 'rb')
+            photo_first = i[0]
+            response = requests.get(f'http://yandexlyceum-shop.herokuapp.com/api/photos/{photo_first}').content
+            file = io.BytesIO(response)
+            file.seek(0)
             context.bot.send_photo(
                 chat_id=update.message.chat_id,
                 photo=file
